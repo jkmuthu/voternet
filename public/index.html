@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoterNet - Civic Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .logo p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .tab {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            font-size: 1em;
+            cursor: pointer;
+            color: #666;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .message.show {
+            display: block;
+            animation: slideDown 0.3s;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .profile-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .profile-info h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .profile-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .profile-item:last-child {
+            border-bottom: none;
+        }
+        
+        .profile-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .profile-value {
+            color: #6c757d;
+        }
+        
+        .api-status {
+            text-align: center;
+            margin-top: 30px;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 8px;
+        }
+        
+        .api-status.online {
+            background: #d4edda;
+        }
+        
+        .api-status .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #28a745;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>🗳️ VoterNet</h1>
+            <p>Your Voice, Your Platform</p>
+        </div>
+        
+        <!-- Active Elections Preview -->
+        <div id="active-elections-preview" style="background: #f7fafc; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: none;">
+            <h3 style="color: #667eea; margin-bottom: 10px; font-size: 18px;">🔴 Active Elections</h3>
+            <div id="elections-list" style="font-size: 14px; color: #666;">
+                Loading...
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" data-tab="register">Register</button>
+            <button class="tab" data-tab="login">Login</button>
+            <button class="tab" data-tab="profile">Profile</button>
+        </div>
+        
+        <!-- Register Tab -->
+        <div id="register-tab" class="tab-content active">
+            <form id="register-form">
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" id="reg-firstname" required placeholder="Enter your first name">
+                </div>
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <input type="text" id="reg-lastname" required placeholder="Enter your last name">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="reg-email" required placeholder="your.email@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="reg-password" required placeholder="Minimum 8 characters">
+                </div>
+                <button type="submit" class="btn">Create Account</button>
+            </form>
+            <div id="register-message" class="message"></div>
+        </div>
+        
+        <!-- Login Tab -->
+        <div id="login-tab" class="tab-content">
+            <form id="login-form">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="login-email" required placeholder="your.email@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" required placeholder="Enter your password">
+                </div>
+                <button type="submit" class="btn">Sign In</button>
+            </form>
+            <div id="login-message" class="message"></div>
+        </div>
+        
+        <!-- Profile Tab -->
+        <div id="profile-tab" class="tab-content">
+            <div id="profile-content">
+                <p style="text-align: center; color: #666; padding: 40px 0;">
+                    Please login to view your profile
+                </p>
+            </div>
+            <div id="navigation-links" style="display: none; margin-top: 20px;">
+                <h3 style="color: #667eea; margin-bottom: 15px;">Quick Actions</h3>
+                <div style="display: grid; gap: 10px;">
+                    <a href="/vote.html" class="nav-link" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600;">
+                        🗳️ Vote in Elections
+                    </a>
+                    <a href="/results.html" class="nav-link" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white; padding: 15px; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600;">
+                        📊 View Election Results
+                    </a>
+                    <a href="/admin.html" id="admin-link" class="nav-link" style="display: none; background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%); color: white; padding: 15px; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600;">
+                        ⚙️ Admin Dashboard
+                    </a>
+                </div>
+            </div>
+            <div id="profile-message" class="message"></div>
+        </div>
+        
+        <div class="api-status" id="api-status">
+            <span class="status-indicator"></span>
+            <span>API Server: <strong>Checking...</strong></span>
+        </div>
+    </div>
+    
+    <script src="config.js"></script>
+    <script>
+        let accessToken = localStorage.getItem('accessToken');
+        let refreshToken = localStorage.getItem('refreshToken');
+        
+        // Load active elections preview
+        async function loadActiveElections() {
+            try {
+                const response = await fetch(`${API_URL}/api/elections/active`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const elections = data.data || [];
+                    
+                    if (elections.length > 0) {
+                        const previewDiv = document.getElementById('active-elections-preview');
+                        const listDiv = document.getElementById('elections-list');
+                        
+                        listDiv.innerHTML = elections.slice(0, 3).map(e => `
+                            <div style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
+                                <strong>${e.title}</strong><br>
+                                <small>Ends: ${new Date(e.endDate).toLocaleDateString()}</small>
+                            </div>
+                        `).join('');
+                        
+                        previewDiv.style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.log('Could not load elections preview');
+            }
+        }
+        
+        // Check API status
+        async function checkAPIStatus() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                const statusDiv = document.getElementById('api-status');
+                statusDiv.className = 'api-status online';
+                statusDiv.innerHTML = '<span class="status-indicator"></span><span>API Server: <strong>Online</strong></span>';
+            } catch (error) {
+                const statusDiv = document.getElementById('api-status');
+                statusDiv.innerHTML = '<span>API Server: <strong>Offline</strong></span>';
+            }
+        }
+        
+        // Switch tabs
+        function switchTab(tabName) {
+            try {
+                console.log('Switching to tab:', tabName);
+                
+                // Remove active class from all tabs
+                const allTabs = document.querySelectorAll('.tab');
+                allTabs.forEach(tab => tab.classList.remove('active'));
+                
+                // Remove active class from all tab contents
+                const allContents = document.querySelectorAll('.tab-content');
+                allContents.forEach(content => content.classList.remove('active'));
+                
+                // Add active class to the correct tab button
+                const tabButtons = document.querySelectorAll('.tab');
+                if (tabName === 'register' && tabButtons[0]) tabButtons[0].classList.add('active');
+                if (tabName === 'login' && tabButtons[1]) tabButtons[1].classList.add('active');
+                if (tabName === 'profile' && tabButtons[2]) tabButtons[2].classList.add('active');
+                
+                // Add active class to corresponding content
+                const contentElement = document.getElementById(`${tabName}-tab`);
+                if (contentElement) {
+                    contentElement.classList.add('active');
+                    console.log('Activated tab content:', tabName);
+                } else {
+                    console.error('Tab content not found:', `${tabName}-tab`);
+                }
+                
+                // Load profile if switching to profile tab
+                if (tabName === 'profile' && accessToken) {
+                    loadProfile();
+                }
+            } catch (error) {
+                console.error('Error switching tabs:', error);
+            }
+        }
+        
+        // Register
+        async function register(event) {
+            event.preventDefault();
+            
+            const data = {
+                firstName: document.getElementById('reg-firstname').value,
+                lastName: document.getElementById('reg-lastname').value,
+                email: document.getElementById('reg-email').value,
+                password: document.getElementById('reg-password').value
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                const messageDiv = document.getElementById('register-message');
+                
+                if (response.ok) {
+                    messageDiv.className = 'message success show';
+                    messageDiv.textContent = '✓ Account created successfully! Please login.';
+                    event.target.reset();
+                    
+                    setTimeout(() => {
+                        switchTab('login');
+                        document.getElementById('login-email').value = data.email;
+                    }, 1500);
+                } else {
+                    messageDiv.className = 'message error show';
+                    messageDiv.textContent = '✗ ' + (result.error || 'Registration failed');
+                }
+            } catch (error) {
+                const messageDiv = document.getElementById('register-message');
+                messageDiv.className = 'message error show';
+                messageDiv.textContent = '✗ Connection error. Please check if the server is running.';
+            }
+        }
+        
+        // Login
+        async function login(event) {
+            event.preventDefault();
+            
+            const data = {
+                email: document.getElementById('login-email').value,
+                password: document.getElementById('login-password').value
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                const messageDiv = document.getElementById('login-message');
+                
+                if (response.ok) {
+                    accessToken = result.accessToken;
+                    refreshToken = result.refreshToken;
+                    localStorage.setItem('accessToken', accessToken);
+                    localStorage.setItem('refreshToken', refreshToken);
+                    localStorage.setItem('token', accessToken);
+                    
+                    messageDiv.className = 'message success show';
+                    messageDiv.textContent = '✓ Login successful!';
+                    
+                    setTimeout(() => {
+                        switchTab('profile');
+                        loadProfile();
+                    }, 1000);
+                } else {
+                    messageDiv.className = 'message error show';
+                    messageDiv.textContent = '✗ ' + (result.error || 'Login failed');
+                }
+            } catch (error) {
+                const messageDiv = document.getElementById('login-message');
+                messageDiv.className = 'message error show';
+                messageDiv.textContent = '✗ Connection error. Please check if the server is running.';
+            }
+        }
+        
+        // Load Profile
+        async function loadProfile() {
+            if (!accessToken) {
+                document.getElementById('profile-content').innerHTML = '<p style="text-align: center; color: #666; padding: 40px 0;">Please login to view your profile</p>';
+                document.getElementById('navigation-links').style.display = 'none';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/users/me`, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                
+                if (response.ok) {
+                    const user = await response.json();
+                    
+                    // Store token with new key name for compatibility
+                    localStorage.setItem('token', accessToken);
+                    
+                    document.getElementById('profile-content').innerHTML = `
+                        <div class="profile-info">
+                            <h3>👤 User Profile</h3>
+                            <div class="profile-item">
+                                <span class="profile-label">Name:</span>
+                                <span class="profile-value">${user.firstName} ${user.lastName}</span>
+                            </div>
+                            <div class="profile-item">
+                                <span class="profile-label">Email:</span>
+                                <span class="profile-value">${user.email}</span>
+                            </div>
+                            <div class="profile-item">
+                                <span class="profile-label">Role:</span>
+                                <span class="profile-value">${user.role}</span>
+                            </div>
+                            <div class="profile-item">
+                                <span class="profile-label">Status:</span>
+                                <span class="profile-value">${user.isActive ? 'Active ✓' : 'Inactive'}</span>
+                            </div>
+                            <div class="profile-item">
+                                <span class="profile-label">Joined:</span>
+                                <span class="profile-value">${new Date(user.createdAt).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                        <button class="btn" style="margin-top: 20px;" onclick="logout()">Logout</button>
+                    `;
+                    
+                    // Show navigation links
+                    document.getElementById('navigation-links').style.display = 'block';
+                    
+                    // Show admin link if user is admin or election official
+                    if (user.role === 'ADMIN' || user.role === 'ELECTION_OFFICIAL') {
+                        document.getElementById('admin-link').style.display = 'block';
+                    } else {
+                        document.getElementById('admin-link').style.display = 'none';
+                    }
+                } else {
+                    document.getElementById('profile-content').innerHTML = '<p style="text-align: center; color: #666; padding: 40px 0;">Session expired. Please login again.</p>';
+                    document.getElementById('navigation-links').style.display = 'none';
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
+                    localStorage.removeItem('token');
+                    accessToken = null;
+                    refreshToken = null;
+                }
+            } catch (error) {
+                const messageDiv = document.getElementById('profile-message');
+                messageDiv.className = 'message error show';
+                messageDiv.textContent = '✗ Failed to load profile';
+            }
+        }
+        
+        // Logout
+        function logout() {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('token');
+            accessToken = null;
+            refreshToken = null;
+            switchTab('login');
+            document.getElementById('profile-content').innerHTML = '<p style="text-align: center; color: #666; padding: 40px 0;">Please login to view your profile</p>';
+            document.getElementById('navigation-links').style.display = 'none';
+        }
+        
+        // Add event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Setting up event listeners...');
+            
+            // Tab buttons
+            document.querySelectorAll('.tab').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const tabName = this.getAttribute('data-tab');
+                    console.log('Tab clicked:', tabName);
+                    switchTab(tabName);
+                });
+            });
+            
+            // Register form
+            const registerForm = document.getElementById('register-form');
+            if (registerForm) {
+                registerForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    register(e);
+                });
+            }
+            
+            // Login form
+            const loginForm = document.getElementById('login-form');
+            if (loginForm) {
+                loginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    login(e);
+                });
+            }
+            
+            console.log('Event listeners set up successfully');
+        });
+        
+        // Initialize
+        checkAPIStatus();
+        loadActiveElections();
+        setInterval(checkAPIStatus, 30000); // Check every 30 seconds
+        setInterval(loadActiveElections, 60000); // Refresh elections every minute
+    </script>
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoterNet - Election Results</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .header h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .content {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .election-info {
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .election-title {
+            font-size: 28px;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        .election-meta {
+            color: #718096;
+            font-size: 14px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .results-section {
+            margin-top: 30px;
+        }
+        .winner-card {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .winner-icon {
+            font-size: 60px;
+            margin-bottom: 10px;
+        }
+        .winner-name {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .winner-votes {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        .candidate-result {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        .candidate-result:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .candidate-result.winner {
+            border-color: #48bb78;
+            background: #f0fff4;
+        }
+        .candidate-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .candidate-name {
+            font-size: 22px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        .candidate-party {
+            color: #667eea;
+            font-size: 14px;
+        }
+        .vote-count {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .vote-percentage {
+            font-size: 16px;
+            color: #718096;
+        }
+        .progress-bar-container {
+            background: #e2e8f0;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 1s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 15px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .progress-bar.winner-bar {
+            background: linear-gradient(90deg, #48bb78 0%, #38a169 100%);
+        }
+        .btn {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-block;
+            text-decoration: none;
+        }
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .alert-warning {
+            background: #fff3e0;
+            border: 1px solid #ffb74d;
+            color: #e65100;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Election Results</h1>
+            <p style="color: #718096;">Official Final Results</p>
+        </div>
+
+        <div class="content">
+            <div id="resultsContent">
+                <div class="loading">Loading results...</div>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="/" class="btn">← Back to Home</a>
+                <a href="/vote.html" class="btn" style="margin-left: 10px;">Vote in Other Elections</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        let electionId = null;
+
+        function init() {
+            // Get election ID from URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            electionId = urlParams.get('id');
+
+            if (!electionId) {
+                displayError('No election ID provided');
+                return;
+            }
+
+            loadResults();
+        }
+
+        async function loadResults() {
+            try {
+                const response = await fetch(`${API_URL}/api/elections/${electionId}/results`);
+
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        displayPendingMessage();
+                        return;
+                    }
+                    throw new Error('Failed to load results');
+                }
+
+                const data = await response.json();
+                displayResults(data.data);
+            } catch (error) {
+                console.error('Error loading results:', error);
+                displayError('Failed to load election results. Please try again later.');
+            }
+        }
+
+        function displayResults(results) {
+            const container = document.getElementById('resultsContent');
+
+            if (!results || !results.candidates || results.candidates.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h2>No Results Available</h2>
+                        <p>Results have not been published yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Find winner
+            const winner = results.candidates.reduce((prev, current) => 
+                (prev.voteCount > current.voteCount) ? prev : current
+            );
+
+            container.innerHTML = `
+                <div class="election-info">
+                    <div class="election-title">${results.electionTitle}</div>
+                    <div class="election-meta">
+                        Type: ${results.electionType} | 
+                        Completed: ${new Date(results.completedAt).toLocaleString()}
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${results.totalVotes.toLocaleString()}</div>
+                        <div class="stat-label">Total Votes Cast</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${results.candidates.length}</div>
+                        <div class="stat-label">Total Candidates</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${Math.round((results.totalVotes / (results.totalVotes || 1)) * 100)}%</div>
+                        <div class="stat-label">Voter Turnout</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${winner.percentage}%</div>
+                        <div class="stat-label">Winning Margin</div>
+                    </div>
+                </div>
+
+                ${winner ? `
+                    <div class="winner-card">
+                        <div class="winner-icon">👑</div>
+                        <div class="winner-name">${winner.candidateName}</div>
+                        <div class="winner-votes">
+                            Winner with ${winner.voteCount.toLocaleString()} votes (${winner.percentage}%)
+                        </div>
+                        <div style="margin-top: 10px; opacity: 0.9;">
+                            Party: ${winner.partyAffiliation}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <div class="results-section">
+                    <h2 style="margin-bottom: 20px;">Detailed Results</h2>
+                    ${results.candidates
+                        .sort((a, b) => b.voteCount - a.voteCount)
+                        .map((candidate, index) => `
+                        <div class="candidate-result ${index === 0 ? 'winner' : ''}">
+                            <div class="candidate-header">
+                                <div>
+                                    <div class="candidate-name">
+                                        ${index === 0 ? '🥇 ' : index === 1 ? '🥈 ' : index === 2 ? '🥉 ' : ''}
+                                        ${candidate.candidateName}
+                                    </div>
+                                    <div class="candidate-party">${candidate.partyAffiliation}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="vote-count">${candidate.voteCount.toLocaleString()}</div>
+                                    <div class="vote-percentage">${candidate.percentage}%</div>
+                                </div>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar ${index === 0 ? 'winner-bar' : ''}" 
+                                     style="width: ${candidate.percentage}%">
+                                    ${candidate.percentage}%
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div style="margin-top: 40px; padding: 20px; background: #f7fafc; border-radius: 8px;">
+                    <h3 style="margin-bottom: 10px; color: #2d3748;">About This Election</h3>
+                    <p style="color: #718096; line-height: 1.6;">
+                        These are the official results for ${results.electionTitle}. 
+                        A total of ${results.totalVotes.toLocaleString()} votes were cast across 
+                        ${results.candidates.length} candidates. All votes have been verified and counted.
+                    </p>
+                </div>
+            `;
+
+            // Animate progress bars
+            setTimeout(() => {
+                document.querySelectorAll('.progress-bar').forEach(bar => {
+                    bar.style.width = bar.getAttribute('data-width') || bar.style.width;
+                });
+            }, 100);
+        }
+
+        function displayPendingMessage() {
+            const container = document.getElementById('resultsContent');
+            container.innerHTML = `
+                <div class="alert alert-warning">
+                    <h3 style="margin-bottom: 10px;">Results Not Yet Available</h3>
+                    <p>This election is still in progress or results have not been finalized yet.</p>
+                    <p>Please check back after the election has been completed.</p>
+                </div>
+            `;
+        }
+
+        function displayError(message) {
+            const container = document.getElementById('resultsContent');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <h2>⚠️ Error</h2>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        init();
+    </script>
+</body>
+</html>

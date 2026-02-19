@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoterNet - Vote Now</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+        }
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .election-list {
+            display: grid;
+            gap: 20px;
+        }
+        .election-card {
+            border: 2px solid #e2e8f0;
+            padding: 25px;
+            border-radius: 10px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .election-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+        .election-card.active {
+            border-color: #48bb78;
+            background: #f0fff4;
+        }
+        .election-title {
+            font-size: 22px;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        .election-meta {
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .status-active {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        .status-upcoming {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        .status-completed {
+            background: #f3e5f5;
+            color: #6a1b9a;
+        }
+        .candidates-section {
+            margin-top: 20px;
+        }
+        .candidate-card {
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .candidate-card:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        .candidate-card.selected {
+            border-color: #48bb78;
+            background: #f0fff4;
+            border-width: 2px;
+        }
+        .candidate-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+        .candidate-party {
+            color: #667eea;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .btn {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        .btn-lg{
+            padding: 15px 40px;
+            font-size: 18px;
+        }
+        .btn-success {
+            background: #48bb78;
+        }
+        .btn-success:hover {
+            background: #38a169;
+        }
+        .vote-confirmation {
+            background: #f0fff4;
+            border: 2px solid #48bb78;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .vote-receipt {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: monospace;
+        }
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .alert-info {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            color: #0d47a1;
+        }
+        .alert-warning {
+            background: #fff3e0;
+            border: 1px solid #ffb74d;
+            color: #e65100;
+        }
+        .alert-success {
+            background: #e8f5e9;
+            border: 1px solid #81c784;
+            color: #1b5e20;
+        }
+        .back-btn {
+            background: #718096;
+            margin-right: 10px;
+        }
+        .back-btn:hover {
+            background: #4a5568;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        .empty-state h2 {
+            margin-bottom: 10px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗳️ VoterNet - Your Voice Matters</h1>
+            <div>
+                <span id="userEmail" style="margin-right: 20px; color: #666;"></span>
+                <button class="btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Elections List View -->
+            <div id="electionsView">
+                <h2 style="margin-bottom: 20px;">Available Elections</h2>
+                <div id="electionsList" class="election-list">
+                    <div class="loading">Loading elections...</div>
+                </div>
+            </div>
+
+            <!-- Voting View -->
+            <div id="votingView" style="display: none;">
+                <button class="btn back-btn" onclick="backToElections()">← Back to Elections</button>
+                <div id="votingContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        let token = localStorage.getItem('token');
+        let currentUser = null;
+        let selectedElection = null;
+        let selectedCandidate = null;
+
+        async function init() {
+            if (!token) {
+                window.location.href = '/';
+                return;
+            }
+
+            try {
+                await loadCurrentUser();
+                await loadActiveElections();
+            } catch (error) {
+                console.error('Error:', error);
+                logout();
+            }
+        }
+
+        async function loadCurrentUser() {
+            const response = await fetch(`${API_URL}/users/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) throw new Error('Failed to load user');
+
+            currentUser = await response.json();
+            document.getElementById('userEmail').textContent = currentUser.email;
+        }
+
+        async function loadActiveElections() {
+            try {
+                const response = await fetch(`${API_URL}/api/elections/active`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+                displayElections(data.data || []);
+            } catch (error) {
+                console.error('Error loading elections:', error);
+                document.getElementById('electionsList').innerHTML = 
+                    '<div class="alert alert-warning">Failed to load elections. Please try again.</div>';
+            }
+        }
+
+        function displayElections(elections) {
+            const container = document.getElementById('electionsList');
+
+            if (!elections || elections.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h2>No Active Elections</h2>
+                        <p>There are currently no elections open for voting.</p>
+                        <p>Check back later or contact your election administrator.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = elections.map(election => `
+                <div class="election-card" onclick="openVoting('${election.id}')">
+                    <div class="status-badge status-active">Active Now</div>
+                    <div class="election-title">${election.title}</div>
+                    <div class="election-meta">
+                        <strong>Type:</strong> ${election.electionType} | 
+                        <strong>Ends:</strong> ${new Date(election.endDate).toLocaleString()}
+                    </div>
+                    <p>${election.description}</p>
+                    <div style="margin-top: 15px;">
+                        <button class="btn btn-lg" onclick="event.stopPropagation(); openVoting('${election.id}')">
+                            Vote Now →
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function openVoting(electionId) {
+            // Check if already voted
+            try {
+                const votedResponse = await fetch(`${API_URL}/api/voting/election/${electionId}/voted`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const votedData = await votedResponse.json();
+
+                if (votedData.data.hasVoted) {
+                    alert('You have already voted in this election. Thank you for participating!');
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking vote status:', error);
+            }
+
+            // Load election and candidates
+            try {
+                const [electionRes, candidatesRes] = await Promise.all([
+                    fetch(`${API_URL}/api/elections/${electionId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }),
+                    fetch(`${API_URL}/api/candidates/election/${electionId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                ]);
+
+                const electionData = await electionRes.json();
+                const candidatesData = await candidatesRes.json();
+
+                selectedElection = electionData.data;
+                displayVotingInterface(electionData.data, candidatesData.data || []);
+            } catch (error) {
+                console.error('Error loading voting interface:', error);
+                alert('Failed to load voting interface. Please try again.');
+            }
+        }
+
+        function displayVotingInterface(election, candidates) {
+            document.getElementById('electionsView').style.display = 'none';
+            document.getElementById('votingView').style.display = 'block';
+
+            const content = document.getElementById('votingContent');
+
+            if (!candidates || candidates.length === 0) {
+                content.innerHTML = `
+                    <div class="alert alert-warning">
+                        <strong>No Candidates Available</strong>
+                        <p>There are no candidates registered for this election yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            content.innerHTML = `
+                <div style="margin-top: 20px;">
+                    <h2>${election.title}</h2>
+                    <p>${election.description}</p>
+                    <div class="alert alert-info" style="margin-top: 20px;">
+                        <strong>🔒 Your vote is secure and anonymous</strong>
+                        <p>Select a candidate below and confirm your vote. You can only vote once.</p>
+                    </div>
+
+                    <div class="candidates-section">
+                        <h3 style="margin-bottom: 15px;">Select Your Candidate:</h3>
+                        ${candidates.map(candidate => `
+                            <div class="candidate-card" id="candidate-${candidate.id}" 
+                                 onclick="selectCandidate('${candidate.id}', '${candidate.candidateName}')">
+                                <div class="candidate-name">${candidate.candidateName}</div>
+                                <div class="candidate-party">Party: ${candidate.partyAffiliation}</div>
+                                ${candidate.bio ? `<p>${candidate.bio}</p>` : ''}
+                                ${candidate.platform ? `<p><strong>Platform:</strong> ${candidate.platform}</p>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div style="margin-top: 30px; text-align: center;">
+                        <button class="btn btn-success btn-lg" id="submitVoteBtn" 
+                                onclick="submitVote()" disabled>
+                            Submit Vote
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectCandidate(candidateId, candidateName) {
+            selectedCandidate = { id: candidateId, name: candidateName };
+
+            // Update UI
+            document.querySelectorAll('.candidate-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            document.getElementById(`candidate-${candidateId}`).classList.add('selected');
+            document.getElementById('submitVoteBtn').disabled = false;
+        }
+
+        async function submitVote() {
+            if (!selectedCandidate || !selectedElection) {
+                alert('Please select a candidate');
+                return;
+            }
+
+            if (!confirm(`Confirm your vote for ${selectedCandidate.name}?\n\nThis action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/voting/vote`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        electionId: selectedElection.id,
+                        candidateId: selectedCandidate.id
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    displayVoteConfirmation(result.data);
+                } else {
+                    alert('Error: ' + (result.message || 'Failed to cast vote'));
+                }
+            } catch (error) {
+                alert('Error casting vote: ' + error.message);
+            }
+        }
+
+        function displayVoteConfirmation(receipt) {
+            const content = document.getElementById('votingContent');
+
+            content.innerHTML = `
+                <div class="vote-confirmation">
+                    <h2 style="color: #48bb78; margin-bottom: 20px;">✓ Vote Cast Successfully!</h2>
+                    <p style="font-size: 18px; margin-bottom: 20px;">
+                        Thank you for participating in ${receipt.electionTitle}
+                    </p>
+
+                    <div class="vote-receipt">
+                        <div style="margin-bottom: 10px;"><strong>Vote Receipt</strong></div>
+                        <div>Vote ID: ${receipt.voteId}</div>
+                        <div>Election: ${receipt.electionTitle}</div>
+                        <div>Timestamp: ${new Date(receipt.timestamp).toLocaleString()}</div>
+                        <div style="margin-top: 10px; word-break: break-all;">
+                            <strong>Verification Hash:</strong><br>
+                            ${receipt.voteHash}
+                        </div>
+                    </div>
+
+                    <p style="margin-top: 20px; color: #718096; font-size: 14px;">
+                        Save this receipt for your records. You can use the verification hash to confirm 
+                        your vote was counted once the election is completed.
+                    </p>
+
+                    <button class="btn btn-lg" onclick="backToElections()" style="margin-top: 20px;">
+                        Return to Elections
+                    </button>
+                </div>
+            `;
+        }
+
+        function backToElections() {
+            selectedElection = null;
+            selectedCandidate = null;
+            document.getElementById('votingView').style.display = 'none';
+            document.getElementById('electionsView').style.display = 'block';
+            loadActiveElections();
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/';
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoterNet - Admin Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+        }
+        .user-info {
+            color: #666;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .tab:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            min-height: 500px;
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #5568d3;
+        }
+        .btn-success {
+            background: #48bb78;
+        }
+        .btn-success:hover {
+            background: #38a169;
+        }
+        .btn-danger {
+            background: #f56565;
+        }
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .election-card {
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            transition: box-shadow 0.3s;
+        }
+        .election-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .election-card h3 {
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        .election-meta {
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-draft {
+            background: #fef5e7;
+            color: #d68910;
+        }
+        .status-published {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .status-active {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        .status-completed {
+            background: #f3e5f5;
+            color: #6a1b9a;
+        }
+        .action-buttons {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .alert {
+            padding: 12px 20px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .alert-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗳️ VoterNet Admin Dashboard</h1>
+            <div class="user-info">
+                <span id="userEmail">Loading...</span>
+                <button class=\"btn\" id=\"logoutBtn\">Logout</button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="dashboard">📊 Dashboard</button>
+            <button class="tab" data-tab="elections">🗳️ Elections</button>
+            <button class="tab" data-tab="candidates">👤 Candidates</button>
+            <button class="tab" data-tab="voting">✅ Voting</button>
+        </div>
+
+        <div class="content">
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="section active">
+                <h2 style="margin-bottom: 20px;">System Overview</h2>
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalElections">-</div>
+                        <div class="stat-label">Total Elections</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="activeElections">-</div>
+                        <div class="stat-label">Active Elections</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalCandidates">-</div>
+                        <div class="stat-label">Total Candidates</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalVotes">-</div>
+                        <div class="stat-label">Total Votes Cast</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-bottom: 15px;">Recent Elections</h3>
+                <div id="recentElections">Loading...</div>
+            </div>
+
+            <!-- Elections Section -->
+            <div id="elections" class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Elections Management</h2>
+                    <button class="btn" id="createElectionBtn">➕ Create Election</button>
+                </div>
+                <div id="electionsList">Loading...</div>
+            </div>
+
+            <!-- Candidates Section -->
+            <div id="candidates" class="section">
+                <h2 style="margin-bottom: 20px;">Candidates Management</h2>
+                <div id="candidatesList">Loading...</div>
+            </div>
+
+            <!-- Voting Section -->
+            <div id="voting" class="section">
+                <h2 style="margin-bottom: 20px;">Voting Statistics</h2>
+                <div id="votingStats">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Election Modal -->
+    <div id="createElectionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New Election</h2>
+                <button class="close-btn" id="closeCreateElectionBtn">&times;</button>
+            </div>
+            <form id="createElectionForm">
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input type="text" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label>Description *</label>
+                    <textarea name="description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Election Type *</label>
+                    <select name="electionType" required>
+                        <option value="national">National</option>
+                        <option value="state">State</option>
+                        <option value="local" selected>Local</option>
+                        <option value="referendum">Referendum</option>
+                        <option value="primary">Primary</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Start Date *</label>
+                    <input type="datetime-local" name="startDate" required>
+                </div>
+                <div class="form-group">
+                    <label>End Date *</label>
+                    <input type="datetime-local" name="endDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Jurisdiction</label>
+                    <input type="text" name="jurisdiction">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-success">Create Election</button>
+                    <button type="button" class="btn" id="cancelCreateElectionBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // Global state
+        let token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+        let currentUser = null;
+
+        // Initialize
+        async function init() {
+            console.log('Admin page initializing...');
+            console.log('Token found:', token ? 'Yes' : 'No');
+            
+            if (!token) {
+                console.log('No token found, redirecting to home...');
+                alert('Please login first to access the admin dashboard.');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+                return;
+            }
+
+            try {
+                await loadCurrentUser();
+                await loadDashboardData();
+            } catch (error) {
+                console.error('Initialization error:', error);
+                alert('Session expired or invalid. Please login again.');
+                logout();
+            }
+        }
+
+        // Load current user
+        async function loadCurrentUser() {
+            console.log('Loading current user...');
+            const response = await fetch(`${API_URL}/users/me`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                console.error('Failed to load user, status:', response.status);
+                throw new Error('Failed to load user');
+            }
+
+            currentUser = await response.json();
+            console.log('Current user loaded:', currentUser.email, 'Role:', currentUser.role);
+            document.getElementById('userEmail').textContent = currentUser.email;
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                const [electionsRes, activeRes] = await Promise.all([
+                    fetch(`${API_URL}/api/elections`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }),
+                    fetch(`${API_URL}/api/elections/active`, {
+                       headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                ]);
+
+                const electionsData = await electionsRes.json();
+                const activeData = await activeRes.json();
+
+                document.getElementById('totalElections').textContent = electionsData.count || 0;
+                document.getElementById('activeElections').textContent = activeData.count || 0;
+
+                displayRecentElections(electionsData.data || []);
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        // Display recent elections
+        function displayRecentElections(elections) {
+            const container = document.getElementById('recentElections');
+            if (!elections || elections.length === 0) {
+                container.innerHTML = '<p style="color: #999;">No elections found</p>';
+                return;
+            }
+
+            container.innerHTML = elections.slice(0, 5).map(election => `
+                <div class="election-card">
+                    <h3>${election.title}</h3>
+                    <div class="election-meta">
+                        <span class="status-badge status-${election.status}">${election.status}</span>
+                        <span style="margin-left: 10px;">Type: ${election.electionType}</span>
+                    </div>
+                    <p>${election.description.substring(0, 150)}...</p>
+                    <div class="election-meta">
+                        Start: ${new Date(election.startDate).toLocaleString()} | 
+                        End: ${new Date(election.endDate).toLocaleString()}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load elections list
+        async function loadElections() {
+            try {
+                const response = await fetch(`${API_URL}/api/elections`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+                const container = document.getElementById('electionsList');
+
+                if (!data.data || data.data.length === 0) {
+                    container.innerHTML = '<p style="color: #999;">No elections found. Create one to get started!</p>';
+                    return;
+                }
+
+                container.innerHTML = data.data.map(election => `
+                    <div class="election-card">
+                        <h3>${election.title}</h3>
+                        <div class="election-meta">
+                            <span class="status-badge status-${election.status}">${election.status}</span>
+                            <span style="margin-left: 10px;">${election.electionType}</span>
+                        </div>
+                        <p>${election.description}</p>
+                        <div class="action-buttons">
+                            ${election.status === 'draft' ? `<button class="btn btn-success" onclick="publishElection('${election.id}')">Publish</button>` : ''}
+                            ${election.status === 'published' ? `<button class="btn btn-success" onclick="activateElection('${election.id}')">Activate</button>` : ''}
+                            ${election.status === 'active' ? `<button class="btn" onclick="completeElection('${election.id}')">Complete</button>` : ''}
+                            ${election.status === 'completed' ? `<button class="btn" onclick="viewResults('${election.id}')">View Results</button>` : ''}
+                            <button class="btn btn-danger" onclick="cancelElection('${election.id}')">Cancel</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading elections:', error);
+            }
+        }
+
+        // Create election
+        document.getElementById('createElectionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+
+            try {
+                const response = await fetch(`${API_URL}/api/elections`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('Election created successfully!');
+                    closeModal('createElectionModal');
+                    e.target.reset();
+                    await loadElections();
+                } else {
+                    alert('Error: ' + (result.message || 'Failed to create election'));
+                }
+            } catch (error) {
+                alert('Error creating election: ' + error.message);
+            }
+        });
+
+        // Election actions
+        async function publishElection(id) {
+            if (!confirm('Publish this election?')) return;
+            await electionAction(id, 'publish', 'Election published successfully');
+        }
+
+        async function activateElection(id) {
+            if (!confirm('Activate this election? Voting will begin.')) return;
+            await electionAction(id, 'activate', 'Election activated');
+        }
+
+        async function completeElection(id) {
+            if (!confirm('Complete this election? Voting will end.')) return;
+            await electionAction(id, 'complete', 'Election completed');
+        }
+
+        async function cancelElection(id) {
+            if (!confirm('Cancel this election? This action cannot be undone.')) return;
+            await electionAction(id, 'cancel', 'Election cancelled');
+        }
+
+        async function electionAction(id, action, successMsg) {
+            try {
+                const response = await fetch(`${API_URL}/api/elections/${id}/${action}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    alert(successMsg);
+                    await loadElections();
+                } else {
+                    const result = await response.json();
+                    alert('Error: ' + (result.message || 'Operation failed'));
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function viewResults(id) {
+            window.open(`/results.html?election=${id}`, '_blank');
+        }
+
+        // Modal management
+        function showCreateElectionModal() {
+            document.getElementById('createElectionModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            console.log('Switching to tab:', tabName);
+            
+            // Update tabs
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            
+            // Find and activate the correct tab button
+            document.querySelectorAll('.tab').forEach(tab => {
+                if (tab.getAttribute('data-tab') === tabName) {
+                    tab.classList.add('active');
+                }
+            });
+
+            // Update sections
+            document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+            const section = document.getElementById(tabName);
+            if (section) {
+                section.classList.add('active');
+            }
+
+            // Load data for the tab
+            if (tabName === 'elections') {
+                loadElections();
+            } else if (tabName === 'dashboard') {
+                loadDashboardData();
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            window.location.href = '/';
+        }
+
+        // Set up event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Admin page DOM loaded, setting up event listeners...');
+            
+            // Tab buttons
+            document.querySelectorAll('.tab').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const tabName = this.getAttribute('data-tab');
+                    console.log('Tab button clicked:', tabName);
+                    switchTab(tabName);
+                });
+            });
+            
+            // Logout button
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', logout);
+            }
+            
+            // Create election button
+            const createElectionBtn = document.getElementById('createElectionBtn');
+            if (createElectionBtn) {
+                createElectionBtn.addEventListener('click', function() {
+                    document.getElementById('createElectionModal').classList.add('active');
+                });
+            }
+            
+            // Close election modal button
+            const closeCreateElectionBtn = document.getElementById('closeCreateElectionBtn');
+            if (closeCreateElectionBtn) {
+                closeCreateElectionBtn.addEventListener('click', function() {
+                    document.getElementById('createElectionModal').classList.remove('active');
+                });
+            }
+            
+            // Cancel button in modal
+            const cancelCreateElectionBtn = document.getElementById('cancelCreateElectionBtn');
+            if (cancelCreateElectionBtn) {
+                cancelCreateElectionBtn.addEventListener('click', function() {
+                    document.getElementById('createElectionModal').classList.remove('active');
+                });
+            }
+            
+            console.log('Event listeners set up successfully');
+        });
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
