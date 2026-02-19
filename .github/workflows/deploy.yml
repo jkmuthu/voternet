@@ -16,9 +16,18 @@ jobs:
           PRIVATE_KEY: ${{ secrets.SSH_KEY }}
           HOST: ${{ secrets.HOST }}
           USER: ${{ secrets.USERNAME }}
+          PORT: ${{ secrets.PORT }}
         run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          rsync -avz --delete --exclude '.git' --exclude '.github' -e "ssh -i private_key -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa" ./ $USER@$HOST:/home/YOUR_HESTIA_USER/web/app.voternet.in/public_html/
+          echo "$PRIVATE_KEY" > private_key
+          chmod 600 private_key
+
+          SSH_PORT=${PORT:-22}
+          SSH_OPTS="-i private_key -p ${SSH_PORT} -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa"
+
+          echo "Deploy target: ${USER}@${HOST}:${SSH_PORT}"
+          ssh ${SSH_OPTS} ${USER}@${HOST} "echo SSH connection successful"
+
+          rsync -avz --delete --exclude '.git' --exclude '.github' -e "ssh ${SSH_OPTS}" ./ ${USER}@${HOST}:/home/${USER}/web/app.voternet.in/public_html/
 
       - name: Fix HestiaCP File Permissions
         uses: appleboy/ssh-action@v1.0.3
@@ -27,4 +36,4 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            chown -R YOUR_HESTIA_USER:YOUR_HESTIA_USER /home/YOUR_HESTIA_USER/web/app.voternet.in/public_html/
+            chown -R ${{ secrets.USERNAME }}:${{ secrets.USERNAME }} /home/${{ secrets.USERNAME }}/web/app.voternet.in/public_html/
