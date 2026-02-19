@@ -18,7 +18,7 @@ jobs:
           USER: ${{ secrets.USERNAME }}
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          rsync -avz --delete --exclude '.git' --exclude '.github' -e "ssh -i private_key -o StrictHostKeyChecking=no" ./ $USER@$HOST:/home/YOUR_HESTIA_USER/web/app.voternet.in/public_html/
+          rsync -avz --delete --exclude '.git' --exclude '.github' -e "ssh -i private_key -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa" ./ $USER@$HOST:/home/YOUR_HESTIA_USER/web/app.voternet.in/public_html/
 
       - name: Fix HestiaCP File Permissions
         uses: appleboy/ssh-action@v1.0.3
