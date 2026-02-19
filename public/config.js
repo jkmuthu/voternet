@@ -9,7 +9,7 @@ const CONFIG = {
     API_URLS: {
         local: 'http://localhost:3000',
         // Replace this with your VPS URL after deployment
-        production: 'https://your-vps-domain.com' // TODO: Update this after VPS deployment
+        production: 'https://app.voternet.in' // TODO: Update this after VPS deployment
     }
 };
 

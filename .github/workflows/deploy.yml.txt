@@ -1,0 +1,30 @@
+name: Deploy to HestiaCP
+
+on:
+  push:
+    branches: [ "main" ] # If your default branch is named 'master', change this to 'master'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Sync files to HestiaCP
+        env:
+          PRIVATE_KEY: ${{ secrets.SSH_KEY }}
+          HOST: ${{ secrets.HOST }}
+          USER: ${{ secrets.USERNAME }}
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          rsync -avz --delete --exclude '.git' --exclude '.github' -e "ssh -i private_key -o StrictHostKeyChecking=no" ./ $USER@$HOST:/home/YOUR_HESTIA_USER/web/app.voternet.in/public_html/
+
+      - name: Fix HestiaCP File Permissions
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            chown -R YOUR_HESTIA_USER:YOUR_HESTIA_USER /home/YOUR_HESTIA_USER/web/app.voternet.in/public_html/

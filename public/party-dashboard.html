@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VoterNet - Party Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f3f4f6;
+            color: #1f2937;
+            padding: 20px;
+        }
+        .container { max-width: 1150px; margin: 0 auto; }
+        .header {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .title { font-size: 28px; color: #312e81; font-weight: 800; }
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 9px 12px;
+            cursor: pointer;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary { background: #4f46e5; color: white; }
+        .btn-light { background: #e5e7eb; color: #111827; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        .card h3 { color: #4338ca; margin-bottom: 8px; }
+        .muted { color: #6b7280; font-size: 14px; }
+        .warning {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .ok {
+            background: #ecfeff;
+            border: 1px solid #a5f3fc;
+            color: #0c4a6e;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .module-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 10px;
+        }
+        .module {
+            border: 1px dashed #c7d2fe;
+            border-radius: 10px;
+            padding: 12px;
+            background: #eef2ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">🏛️ Party/Candidate Dashboard</div>
+            <div>
+                <a class="btn btn-light" href="/index.html">Home</a>
+                <a class="btn btn-light" href="/civic/feed">Civic Feed</a>
+                <a class="btn btn-primary" href="/admin/devdoc">Roadmap</a>
+            </div>
+        </div>
+
+        <div id="accessNotice"></div>
+
+        <div class="grid" id="statsGrid">
+            <div class="card"><h3>Account</h3><p id="actorName" class="muted">Loading...</p></div>
+            <div class="card"><h3>Role</h3><p id="actorRole" class="muted">-</p></div>
+            <div class="card"><h3>Published Posts</h3><p id="myPosts" class="muted">-</p></div>
+            <div class="card"><h3>Active Elections</h3><p id="activeElections" class="muted">-</p></div>
+        </div>
+
+        <div class="card" style="margin-bottom: 16px;">
+            <h3>Phase-1 CRM Modules</h3>
+            <div class="module-list">
+                <div class="module"><strong>Party Profile</strong><p class="muted">Branding, manifesto summary, profile verification.</p></div>
+                <div class="module"><strong>Team Management</strong><p class="muted">Invite campaign staff and assign responsibilities.</p></div>
+                <div class="module"><strong>Voter Segments</strong><p class="muted">Import and group voter lists by location and tags.</p></div>
+                <div class="module"><strong>Campaign Planner</strong><p class="muted">Publish posts, schedule communication, track actions.</p></div>
+                <div class="module"><strong>Booth Strategy</strong><p class="muted">Track booth-level status and field operations.</p></div>
+                <div class="module"><strong>Performance View</strong><p class="muted">Engagement, outreach and conversion metrics.</p></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Recent Party-Visible Posts</h3>
+            <div id="postList" class="muted">Loading...</div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+        const allowedRoles = ['campaign_staff', 'admin', 'election_official', 'volunteer'];
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        async function secureFetch(path, options = {}) {
+            const headers = options.headers || {};
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Request failed');
+            return data;
+        }
+
+        async function loadPartyDashboard() {
+            if (!token) {
+                window.location.href = '/index.html#auth';
+                return;
+            }
+
+            try {
+                const [profile, postsPayload, electionsPayload] = await Promise.all([
+                    secureFetch('/users/me'),
+                    fetch(`${API_URL}/api/civic/posts?limit=10&page=1`).then((r) => r.json()),
+                    fetch(`${API_URL}/api/elections/active`).then((r) => r.json())
+                ]);
+
+                document.getElementById('actorName').textContent = `${profile.firstName} ${profile.lastName}`;
+                document.getElementById('actorRole').textContent = profile.role;
+                document.getElementById('activeElections').textContent = String((electionsPayload.data || []).length);
+
+                const myPosts = (postsPayload.posts || []).filter((post) => post.authorId === profile.id).length;
+                document.getElementById('myPosts').textContent = String(myPosts);
+
+                const notice = document.getElementById('accessNotice');
+                if (!allowedRoles.includes(profile.role)) {
+                    notice.className = 'warning';
+                    notice.textContent = `Access policy: this area is intended for party/campaign roles. Current role '${profile.role}' has view-only access.`;
+                } else {
+                    notice.className = 'ok';
+                    notice.textContent = `Role '${profile.role}' recognized for party operations.`;
+                }
+
+                const posts = (postsPayload.posts || []).slice(0, 5);
+                document.getElementById('postList').innerHTML = posts.length
+                    ? posts.map((post) => `
+                        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:10px;">
+                            <strong>${escapeHtml(post.title)}</strong>
+                            <p class="muted" style="margin-top: 6px;">${escapeHtml((post.content || '').slice(0, 140))}${(post.content || '').length > 140 ? '...' : ''}</p>
+                        </div>
+                    `).join('')
+                    : '<p class="muted">No posts available.</p>';
+            } catch (error) {
+                document.getElementById('accessNotice').className = 'warning';
+                document.getElementById('accessNotice').textContent = error.message;
+                document.getElementById('statsGrid').innerHTML = '';
+                document.getElementById('postList').innerHTML = '<p class="muted">Unable to load content.</p>';
+            }
+        }
+
+        loadPartyDashboard();
+    </script>
+</body>
+</html>

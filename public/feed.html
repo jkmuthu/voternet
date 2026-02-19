@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VoterNet - Civic Feed</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f3f4f6;
+            color: #1f2937;
+            padding: 20px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .title { font-size: 28px; color: #4338ca; font-weight: 800; }
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary { background: #4f46e5; color: white; }
+        .btn-secondary { background: #e5e7eb; color: #1f2937; }
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        .row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px;
+        }
+        .form-group textarea { min-height: 100px; resize: vertical; }
+        .post {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 12px;
+            background: #fff;
+        }
+        .post h3 { color: #312e81; margin-bottom: 6px; }
+        .meta { color: #6b7280; font-size: 13px; margin-bottom: 8px; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .badge {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #4338ca;
+            margin-right: 6px;
+        }
+        .msg {
+            margin-top: 8px;
+            padding: 9px 10px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .msg.error { background: #fee2e2; color: #991b1b; }
+        .msg.success { background: #dcfce7; color: #166534; }
+        .muted { color: #6b7280; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">📰 Civic Feed</div>
+            <div>
+                <a href="/index.html" class="btn btn-secondary">Home</a>
+                <a href="/vote.html" class="btn btn-secondary">Vote</a>
+                <a href="/results.html" class="btn btn-secondary">Results</a>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="row">
+                <div class="form-group">
+                    <label for="searchInput">Search Posts</label>
+                    <input id="searchInput" type="text" placeholder="Enter keyword" />
+                </div>
+                <div class="form-group">
+                    <label for="typeFilter">Post Type</label>
+                    <select id="typeFilter">
+                        <option value="">All</option>
+                        <option value="announcement">Announcement</option>
+                        <option value="policy">Policy</option>
+                        <option value="event">Event</option>
+                        <option value="update">Update</option>
+                        <option value="debate">Debate</option>
+                    </select>
+                </div>
+            </div>
+            <div class="actions">
+                <button id="refreshBtn" class="btn btn-primary">Refresh Feed</button>
+                <button id="searchBtn" class="btn btn-secondary">Search</button>
+                <button id="trendingBtn" class="btn btn-secondary">Trending</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2 style="color:#312e81; margin-bottom: 10px;">Create Post</h2>
+            <form id="postForm">
+                <div class="row">
+                    <div class="form-group">
+                        <label for="postTitle">Title *</label>
+                        <input id="postTitle" required maxlength="300" />
+                    </div>
+                    <div class="form-group">
+                        <label for="postType">Type *</label>
+                        <select id="postType" required>
+                            <option value="update">Update</option>
+                            <option value="announcement">Announcement</option>
+                            <option value="policy">Policy</option>
+                            <option value="event">Event</option>
+                            <option value="debate">Debate</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="postContent">Content *</label>
+                    <textarea id="postContent" required></textarea>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label for="postTags">Tags (comma separated)</label>
+                        <input id="postTags" placeholder="youth, jobs, governance" />
+                    </div>
+                    <div class="form-group">
+                        <label for="postImage">Image URL (optional)</label>
+                        <input id="postImage" type="url" placeholder="https://..." />
+                    </div>
+                </div>
+                <button class="btn btn-primary" type="submit">Publish Post</button>
+                <div id="postMessage"></div>
+            </form>
+            <p class="muted" style="margin-top: 8px;">Login is required for create/like/share actions.</p>
+        </div>
+
+        <div id="feedList" class="panel">
+            <p class="muted">Loading posts...</p>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function setPostMessage(text, type) {
+            const target = document.getElementById('postMessage');
+            target.className = `msg ${type}`;
+            target.textContent = text;
+        }
+
+        async function fetchJson(path, options = {}) {
+            const headers = options.headers || {};
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            const response = await fetch(`${API_URL}${path}`, { ...options, headers });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(payload.message || 'Request failed');
+            }
+            return payload;
+        }
+
+        function renderPosts(posts) {
+            const container = document.getElementById('feedList');
+            if (!posts || posts.length === 0) {
+                container.innerHTML = '<p class="muted">No posts found.</p>';
+                return;
+            }
+
+            container.innerHTML = posts.map((post) => `
+                <article class="post">
+                    <div class="meta">
+                        <span class="badge">${escapeHtml(post.postType)}</span>
+                        ${post.author ? `By ${escapeHtml(post.author.firstName || '')} ${escapeHtml(post.author.lastName || '')}` : 'By user'} ·
+                        ${new Date(post.createdAt).toLocaleString()}
+                    </div>
+                    <h3>${escapeHtml(post.title)}</h3>
+                    <p>${escapeHtml(post.content)}</p>
+                    ${post.tags && post.tags.length ? `<p class="meta">Tags: ${post.tags.map((t) => `#${escapeHtml(t)}`).join(' ')}</p>` : ''}
+                    ${post.imageUrl ? `<p class="meta"><a href="${escapeHtml(post.imageUrl)}" target="_blank" rel="noopener">View image</a></p>` : ''}
+                    <div class="actions">
+                        <button class="btn btn-secondary" onclick="likePost('${post.id}')">👍 ${post.likesCount || 0}</button>
+                        <button class="btn btn-secondary" onclick="sharePost('${post.id}')">🔁 ${post.sharesCount || 0}</button>
+                        <span class="muted">💬 ${post.commentsCount || 0}</span>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        async function loadPosts() {
+            const type = document.getElementById('typeFilter').value;
+            const query = new URLSearchParams({ page: '1', limit: '20' });
+            if (type) query.set('postType', type);
+            const payload = await fetchJson(`/api/civic/posts?${query.toString()}`);
+            renderPosts(payload.posts || []);
+        }
+
+        async function searchPosts() {
+            const q = document.getElementById('searchInput').value.trim();
+            if (!q) {
+                await loadPosts();
+                return;
+            }
+            const payload = await fetchJson(`/api/civic/posts/search?q=${encodeURIComponent(q)}&limit=20`);
+            renderPosts(payload.data || []);
+        }
+
+        async function loadTrending() {
+            const payload = await fetchJson('/api/civic/posts/trending?limit=20');
+            renderPosts(payload.data || []);
+        }
+
+        async function likePost(postId) {
+            if (!token) {
+                alert('Please login to like posts.');
+                return;
+            }
+            await fetchJson(`/api/civic/posts/${postId}/like`, { method: 'POST' });
+            await loadPosts();
+        }
+
+        async function sharePost(postId) {
+            if (!token) {
+                alert('Please login to share posts.');
+                return;
+            }
+            await fetchJson(`/api/civic/posts/${postId}/share`, { method: 'POST' });
+            await loadPosts();
+        }
+
+        async function createPost(event) {
+            event.preventDefault();
+            setPostMessage('', '');
+
+            if (!token) {
+                setPostMessage('Please login first to create a post.', 'error');
+                return;
+            }
+
+            const title = document.getElementById('postTitle').value.trim();
+            const content = document.getElementById('postContent').value.trim();
+            const postType = document.getElementById('postType').value;
+            const imageUrl = document.getElementById('postImage').value.trim();
+            const tagsRaw = document.getElementById('postTags').value.trim();
+            const tags = tagsRaw ? tagsRaw.split(',').map((x) => x.trim()).filter(Boolean) : [];
+
+            if (!title || !content) {
+                setPostMessage('Title and content are required.', 'error');
+                return;
+            }
+
+            try {
+                await fetchJson('/api/civic/posts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, content, postType, tags, imageUrl: imageUrl || undefined })
+                });
+
+                setPostMessage('Post published successfully.', 'success');
+                document.getElementById('postForm').reset();
+                await loadPosts();
+            } catch (error) {
+                setPostMessage(error.message, 'error');
+            }
+        }
+
+        document.getElementById('postForm').addEventListener('submit', createPost);
+        document.getElementById('refreshBtn').addEventListener('click', loadPosts);
+        document.getElementById('searchBtn').addEventListener('click', searchPosts);
+        document.getElementById('trendingBtn').addEventListener('click', loadTrending);
+        document.getElementById('typeFilter').addEventListener('change', loadPosts);
+
+        loadPosts().catch((error) => {
+            document.getElementById('feedList').innerHTML = `<p class="msg error">${error.message}</p>`;
+        });
+    </script>
+</body>
+</html>

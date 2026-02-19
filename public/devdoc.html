@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoterNet Admin - Development Document</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 24px;
+            color: #1f2937;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        h1 { color: #4338ca; font-size: 30px; }
+        h2 { color: #312e81; font-size: 22px; margin-bottom: 12px; }
+        h3 { color: #4338ca; font-size: 18px; margin-bottom: 8px; }
+        p { line-height: 1.6; }
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            background: #667eea;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover { background: #5568d3; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+        .metric {
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 10px;
+            padding: 14px;
+        }
+        .metric-title { font-size: 12px; color: #4f46e5; text-transform: uppercase; font-weight: 700; }
+        .metric-value { font-size: 20px; font-weight: 700; margin-top: 4px; }
+        .phase {
+            border: 1px solid #e5e7eb;
+            border-left: 5px solid #667eea;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: #fff;
+        }
+        .phase-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #4b5563;
+        }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 6px; line-height: 1.5; }
+        .badge {
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 999px;
+            padding: 3px 10px;
+            color: #fff;
+        }
+        .Critical { background: #dc2626; }
+        .High { background: #d97706; }
+        .Medium { background: #2563eb; }
+        .Low { background: #6b7280; }
+        .error {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            border-radius: 10px;
+            padding: 14px;
+        }
+        .muted { color: #6b7280; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>📘 Development Document</h1>
+                <div>
+                    <a class="btn" href="/admin.html">← Back to Admin Panel</a>
+                </div>
+            </div>
+            <p class="muted">Restricted page: document content is loaded only for authenticated admin users.</p>
+        </div>
+
+        <div id="content" class="card">
+            <p>Loading admin document...</p>
+        </div>
+    </div>
+
+    <script>
+        async function loadDevDoc() {
+            const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+            const content = document.getElementById('content');
+
+            if (!token) {
+                content.innerHTML = `
+                    <div class="error">
+                        <strong>Authentication required.</strong>
+                        <p>Please login as admin and reopen this page.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/devdoc', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorPayload = await response.json().catch(() => ({}));
+                    const message = errorPayload.message || 'Access denied';
+                    content.innerHTML = `
+                        <div class="error">
+                            <strong>Access denied.</strong>
+                            <p>${message}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const payload = await response.json();
+                const doc = payload.data;
+
+                content.innerHTML = `
+                    <div class="header" style="margin-bottom: 16px;">
+                        <div>
+                            <h2>${doc.title}</h2>
+                            <p class="muted">Version ${doc.version} · Updated ${new Date(doc.updatedAt).toLocaleString()}</p>
+                        </div>
+                    </div>
+
+                    <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; margin:0 0 16px 0; padding:16px;">
+                        <h3>Vision</h3>
+                        <p>${doc.vision}</p>
+                    </div>
+
+                    <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; margin:0 0 16px 0; padding:16px;">
+                        <h3>4-Tier Architecture</h3>
+                        <ul>
+                            ${doc.architecture.map((item) => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; margin:0 0 16px 0; padding:16px;">
+                        <h3>Summary</h3>
+                        <div class="grid">
+                            <div class="metric"><div class="metric-title">Current Completion</div><div class="metric-value">${doc.summary.completion}</div></div>
+                            <div class="metric"><div class="metric-title">Planned Features</div><div class="metric-value">${doc.summary.plannedFeatures}+</div></div>
+                            <div class="metric"><div class="metric-title">Phases</div><div class="metric-value">${doc.summary.phases}</div></div>
+                            <div class="metric"><div class="metric-title">Timeline</div><div class="metric-value">${doc.summary.timelineMonths}</div></div>
+                            <div class="metric"><div class="metric-title">Estimated Budget</div><div class="metric-value">${doc.summary.estimatedBudgetINR}</div></div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; margin:0 0 16px 0; padding:16px;">
+                        <h3>Phase Plan</h3>
+                        ${doc.phases.map((phase) => `
+                            <div class="phase">
+                                <div class="header" style="margin-bottom: 8px;">
+                                    <h3>Phase ${phase.id}: ${phase.name}</h3>
+                                    <span class="badge ${phase.priority}">${phase.priority}</span>
+                                </div>
+                                <div class="phase-meta">
+                                    <span><strong>Timeline:</strong> ${phase.timeline}</span>
+                                </div>
+                                <p style="margin-bottom: 8px;"><strong>Goal:</strong> ${phase.goal}</p>
+                                <ul>${phase.deliverables.map((item) => `<li>${item}</li>`).join('')}</ul>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; margin:0; padding:16px;">
+                        <h3>Milestones</h3>
+                        <ul>
+                            ${doc.milestones.map((m) => `<li><strong>${m.name}</strong> — ${m.target} (${m.successMetric})</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="error">
+                        <strong>Unable to load development document.</strong>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        loadDevDoc();
+    </script>
+</body>
+</html>

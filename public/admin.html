@@ -237,6 +237,45 @@
             border: 1px solid #f5c6cb;
             color: #721c24;
         }
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .module-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+            background: #f8fafc;
+        }
+        .module-card h3 {
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+        .module-card p {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .module-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .module-pill {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .module-pill:hover {
+            background: #5568d3;
+        }
     </style>
 </head>
 <body>
@@ -245,6 +284,7 @@
             <h1>🗳️ VoterNet Admin Dashboard</h1>
             <div class="user-info">
                 <span id="userEmail">Loading...</span>
+                <button class="btn" id="openDevDocBtn">📘 Dev Document</button>
                 <button class=\"btn\" id=\"logoutBtn\">Logout</button>
             </div>
         </div>
@@ -254,6 +294,7 @@
             <button class="tab" data-tab="elections">🗳️ Elections</button>
             <button class="tab" data-tab="candidates">👤 Candidates</button>
             <button class="tab" data-tab="voting">✅ Voting</button>
+            <button class="tab" data-tab="modules">🧭 Modules</button>
         </div>
 
         <div class="content">
@@ -302,6 +343,48 @@
             <div id="voting" class="section">
                 <h2 style="margin-bottom: 20px;">Voting Statistics</h2>
                 <div id="votingStats">Loading...</div>
+            </div>
+
+            <!-- Modules Section -->
+            <div id="modules" class="section">
+                <h2 style="margin-bottom: 10px;">Platform Modules</h2>
+                <p style="color: #718096; margin-bottom: 15px;">Centralized quick-access panel for super admin references and operations.</p>
+
+                <div class="module-grid">
+                    <div class="module-card">
+                        <h3>📘 Development Reference</h3>
+                        <p>Roadmap, milestones, phase plan, and implementation scope.</p>
+                        <div class="module-links">
+                            <a class="module-pill" href="/admin/devdoc" target="_blank" rel="noopener">Open Dev Document</a>
+                        </div>
+                    </div>
+
+                    <div class="module-card">
+                        <h3>👥 Voter Experience</h3>
+                        <p>Voter profile, active elections, and civic participation flow.</p>
+                        <div class="module-links">
+                            <a class="module-pill" href="/dashboard/voter" target="_blank" rel="noopener">Voter Dashboard</a>
+                            <a class="module-pill" href="/vote.html" target="_blank" rel="noopener">Vote Screen</a>
+                            <a class="module-pill" href="/results.html" target="_blank" rel="noopener">Results Screen</a>
+                        </div>
+                    </div>
+
+                    <div class="module-card">
+                        <h3>🏛️ Party/Candidate CRM</h3>
+                        <p>Campaign operations shell for party teams and candidate management.</p>
+                        <div class="module-links">
+                            <a class="module-pill" href="/dashboard/party" target="_blank" rel="noopener">Party Dashboard</a>
+                        </div>
+                    </div>
+
+                    <div class="module-card">
+                        <h3>📰 Civic Feed</h3>
+                        <p>Community content stream with posts, search, trending, likes, and shares.</p>
+                        <div class="module-links">
+                            <a class="module-pill" href="/civic/feed" target="_blank" rel="noopener">Open Civic Feed</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -398,6 +481,13 @@
 
             currentUser = await response.json();
             console.log('Current user loaded:', currentUser.email, 'Role:', currentUser.role);
+
+            if (!currentUser.role || currentUser.role !== 'admin') {
+                alert('Access denied. Admin users only.');
+                logout();
+                return;
+            }
+
             document.getElementById('userEmail').textContent = currentUser.email;
         }
 
@@ -625,6 +715,14 @@
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', logout);
+            }
+
+            // Development document button
+            const openDevDocBtn = document.getElementById('openDevDocBtn');
+            if (openDevDocBtn) {
+                openDevDocBtn.addEventListener('click', function() {
+                    window.location.href = '/admin/devdoc';
+                });
             }
             
             // Create election button

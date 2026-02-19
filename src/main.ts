@@ -8,11 +8,15 @@ import { AppDataSource } from './libraries/database/data-source.js';
 import { config } from './libraries/config/config.js';
 import { logger } from './libraries/logger/logger.js';
 import { authRoutes } from './apps/auth/entry-points/auth.routes.js';
+import { authenticate } from './apps/auth/middleware/authenticate.js';
+import { authorize } from './apps/auth/middleware/authorize.js';
+import { UserRole } from './libraries/database/entities/User.js';
 import { userRoutes } from './apps/users/entry-points/user.routes.js';
 import electionRoutes from './apps/elections/routes/election.routes.js';
 import candidateRoutes from './apps/elections/routes/candidate.routes.js';
 import votingRoutes from './apps/elections/routes/voting.routes.js';
 import civicFeedRoutes from './apps/civic/routes/civic-feed.routes.js';
+import { getDevelopmentRoadmap } from './apps/admin/devdoc.data.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { rateLimiter } from './middleware/rate-limiter.js';
 import { initializeRedis } from './libraries/redis/redis.js';
@@ -57,6 +61,37 @@ app.use('/api/elections', electionRoutes);
 app.use('/api/candidates', candidateRoutes);
 app.use('/api/voting', votingRoutes);
 app.use('/api/civic', civicFeedRoutes);
+
+// Admin-only development document data
+app.get(
+  '/api/admin/devdoc',
+  authenticate,
+  authorize([UserRole.ADMIN]),
+  (req, res) => {
+    res.json({
+      success: true,
+      data: getDevelopmentRoadmap()
+    });
+  }
+);
+
+// Admin development document page shell
+app.get('/admin/devdoc', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/devdoc.html'));
+});
+
+// Friendly frontend routes
+app.get('/dashboard/voter', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/voter-dashboard.html'));
+});
+
+app.get('/dashboard/party', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/party-dashboard.html'));
+});
+
+app.get('/civic/feed', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/feed.html'));
+});
 
 // 404 handler
 app.use((req, res) => {
